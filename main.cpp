@@ -1,35 +1,36 @@
+//vsèƒ½ç¼–è¯‘é€šè¿‡ï¼Œå…¶ä»–ç¼–è¯‘å™¨æ²¡æœ‰è¯•è¿‡
 #include <iostream>
 #include <fstream> 
 #include <stdlib.h>
 #include <time.h>
-constexpr auto NUM_ID = 7000;//NUM_IDÓ¦¸Ã´óÓÚ×î´óµÄIDÊımax
-constexpr auto NUM_CIR = 230;//»·µÄ×î´óÊıÄ¿£¨¿¼ÂÇ´óÁ¿ÖØ¸´µÄ»·£©
-constexpr auto LEN = 5100;//LENÓ¦¸Ã´óÓÚÓÃ»§µÄ×ÜÊı
+constexpr auto NUM_ID = 7000;//NUM_IDåº”è¯¥å¤§äºæœ€å¤§çš„IDæ•°max
+constexpr auto NUM_CIR = 230;//ç¯çš„æœ€å¤§æ•°ç›®ï¼ˆè€ƒè™‘å¤§é‡é‡å¤çš„ç¯ï¼‰
+constexpr auto LEN = 5100;//LENåº”è¯¥å¤§äºç”¨æˆ·çš„æ€»æ•°
 using namespace std;
 
-//¶¨Òå½á¹¹Ìå£¬È«¾Ö±äÁ¿
+//å®šä¹‰ç»“æ„ä½“ï¼Œå…¨å±€å˜é‡
 int visited[NUM_ID];
 typedef struct{
-	unsigned int data[7];//´æÒ»¸ö»·
-	unsigned int length;//»·µÄ³¤¶È
-}CIR;//Ò»¸ö»·µÄĞÅÏ¢
-CIR circle[NUM_CIR];//ÔªËØÎª»·½á¹¹ÌåµÄÊı×é
+	unsigned int data[7];//å­˜ä¸€ä¸ªç¯
+	unsigned int length;//ç¯çš„é•¿åº¦
+}CIR;//ä¸€ä¸ªç¯çš„ä¿¡æ¯
+CIR circle[NUM_CIR];//å…ƒç´ ä¸ºç¯ç»“æ„ä½“çš„æ•°ç»„
 
-//ÀàDFSËã·¨£¬ÕÒ³öËùÓĞ»·
+//ç±»DFSç®—æ³•ï¼Œæ‰¾å‡ºæ‰€æœ‰ç¯
 bool DFS(unsigned int G[][9], unsigned int ID, int numcirl) {
 	visited[ID] = numcirl;
 	circle[numcirl].data[circle[numcirl].length++] = ID;
-	if (circle[numcirl].length == 7) {//»·µÄ³¤¶ÈÒªĞ¡ÓÚ8
-		for (unsigned int k=1; k <= G[ID][0]; k++) //IDÓĞÃ»ÓĞ³ö¶ÈÊÇ»·Í·
-			if (G[ID][k] == circle[numcirl].data[0]) return 1;//ÕÒµ½»·
+	if (circle[numcirl].length == 7) {//ç¯çš„é•¿åº¦è¦å°äº8
+		for (unsigned int k=1; k <= G[ID][0]; k++) //IDæœ‰æ²¡æœ‰å‡ºåº¦æ˜¯ç¯å¤´
+			if (G[ID][k] == circle[numcirl].data[0]) return 1;//æ‰¾åˆ°ç¯
 		circle[numcirl].length = 0;
 		visited[ID] = -1;
-		return 0;//²»ÊÇ»·
+		return 0;//ä¸æ˜¯ç¯
 	}
 	for (unsigned int i = 1; i <= G[ID][0]; i++) {
-		if (circle[numcirl].length > 2)//»·µÄ³¤¶ÈÒª´óÓÚ2
+		if (circle[numcirl].length > 2)//ç¯çš„é•¿åº¦è¦å¤§äº2
 			for (unsigned int j = 1; j <= G[ID][0]; j++)
-				if (G[ID][j] == circle[numcirl].data[0]) return 1;//ÕÒµ½»·
+				if (G[ID][j] == circle[numcirl].data[0]) return 1;//æ‰¾åˆ°ç¯
 		if (visited[G[ID][i]] == numcirl) continue;
 		if (DFS(G, G[ID][i], numcirl)) return 1;
 		else {
@@ -37,22 +38,22 @@ bool DFS(unsigned int G[][9], unsigned int ID, int numcirl) {
 			return 0;
 		}
 	}
-	circle[numcirl].length = 0;//ÍË³öµİ¹éÊ±£¬
+	circle[numcirl].length = 0;//é€€å‡ºé€’å½’æ—¶ï¼Œ
 	return 0;
 }
 
 int main()
 {
-	long start = clock();  //¿ªÊ¼Ê±¼ä
-	long finish;//½áÊøÊ±¼ä£¬ÓÃÓÚ²âÊÔ´úÂëÔËĞĞÊ±¼ä
-	long t;//Ê±¼ä¼ä¸ô
+	long start = clock();  //å¼€å§‹æ—¶é—´
+	long finish;//ç»“æŸæ—¶é—´ï¼Œç”¨äºæµ‹è¯•ä»£ç è¿è¡Œæ—¶é—´
+	long t;//æ—¶é—´é—´éš”
    
-	//´ò¿ª¶ÁÈ¡Êı¾İµÄÎÄ¼ş£¬´æ·ÅÔÚdf£¨data of file£©Êı×éÖĞ
+	//æ‰“å¼€è¯»å–æ•°æ®çš„æ–‡ä»¶ï¼Œå­˜æ”¾åœ¨dfï¼ˆdata of fileï¼‰æ•°ç»„ä¸­
 	FILE* fin = NULL;
 	unsigned int* df1 = (unsigned int*)malloc(sizeof(unsigned int) * NUM_ID);
 	unsigned int* df2 = (unsigned int*)malloc(sizeof(unsigned int) * NUM_ID);
 	unsigned int n = 0;
-	unsigned int max = 0;//ÕûÕÅÍ¼Àï×î´óµÄID
+	unsigned int max = 0;//æ•´å¼ å›¾é‡Œæœ€å¤§çš„ID
 	if (fopen_s(&fin, "test_data.txt", "rb") != 0) {
 		printf("error open test_data.txt\n");
 		return 0;
@@ -71,84 +72,84 @@ int main()
 	fclose(fin);
 
 
-	//´´½¨ÓĞÏòÍ¼(ÁÚ½Ó¾ØÕó)
-	/*ÁÚ½Ó¾ØÕó£º
-	ĞòºÅ£º¼´ÓÃ»§ID£¬Ëæ»ú·ÃÎÊ¼õÉÙÊ±¼ä¿ªÏú
-	µÚ0ÁĞ£º¸Ã¶¥µãµÄ³ö¶È£¨Õâ¸öIDÕËºÅ¸ø¶àÉÙ¸öÈË×ªÕË£©
-	µÚnÁĞ£¨n>=1£©£º¸Ã¶¥µãµÄ³ö±ßÁÚ½Ó½áµã
+	//åˆ›å»ºæœ‰å‘å›¾(é‚»æ¥çŸ©é˜µ)
+	/*é‚»æ¥çŸ©é˜µï¼š
+	åºå·ï¼šå³ç”¨æˆ·IDï¼Œéšæœºè®¿é—®å‡å°‘æ—¶é—´å¼€é”€
+	ç¬¬0åˆ—ï¼šè¯¥é¡¶ç‚¹çš„å‡ºåº¦ï¼ˆè¿™ä¸ªIDè´¦å·ç»™å¤šå°‘ä¸ªäººè½¬è´¦ï¼‰
+	ç¬¬nåˆ—ï¼ˆn>=1ï¼‰ï¼šè¯¥é¡¶ç‚¹çš„å‡ºè¾¹é‚»æ¥ç»“ç‚¹
 	*/
 	unsigned int G[NUM_ID][9];
 	unsigned int ID;
 	for (unsigned int i = 0; i <= max; i++) {
-		G[i][0] = 0;//ËùÓĞ³ö¶È³õÊ¼»¯Îª0
-		visited[i] = -1;//Ëæ±ãÒ²³õÊ¼»¯·ÃÎÊ¼ÇÂ¼Êı×é
+		G[i][0] = 0;//æ‰€æœ‰å‡ºåº¦åˆå§‹åŒ–ä¸º0
+		visited[i] = -1;//éšä¾¿ä¹Ÿåˆå§‹åŒ–è®¿é—®è®°å½•æ•°ç»„
 	}
 	for (unsigned int i = 0; i < n; i++) {
 		ID = df1[i];
 		G[ID][G[ID][0]+1] = df2[i];
-		G[ID][0]++;//³ö¶È¼ÓÒ»
+		G[ID][0]++;//å‡ºåº¦åŠ ä¸€
 	}
 	free(df1);
 	free(df2);
 
-	//ÕÒ³öËùÓĞ»·
-	unsigned int numcirl=0;//»·µÄ×ÜÊıÁ¿
+	//æ‰¾å‡ºæ‰€æœ‰ç¯
+	unsigned int numcirl=0;//ç¯çš„æ€»æ•°é‡
 	for (unsigned int i = 0; i <= max; i++) {
-		circle[numcirl].length = 0;//³õÊ¼»¯³¤¶È
+		circle[numcirl].length = 0;//åˆå§‹åŒ–é•¿åº¦
 		if (G[i][0] == 0) continue;
 		circle[numcirl].data[circle[numcirl].length++] = i;
-		visited[i] = numcirl;//·ÃÎÊ¼ÇºÅ
-		if (DFS(G, G[i][1], numcirl)) numcirl++;//Èô³É»·£¬Ôò»·Êı¼ÓÒ»
+		visited[i] = numcirl;//è®¿é—®è®°å·
+		if (DFS(G, G[i][1], numcirl)) numcirl++;//è‹¥æˆç¯ï¼Œåˆ™ç¯æ•°åŠ ä¸€
 		else {
-			visited[i] = -1;//²»³É»·£¬É¾³ı·ÃÎÊ¼ÇºÅ
+			visited[i] = -1;//ä¸æˆç¯ï¼Œåˆ é™¤è®¿é—®è®°å·
 			circle[numcirl].length = 0;
 		}
 	}
 
-	//»·ÄÚÅÅĞò
+	//ç¯å†…æ’åº
 	unsigned int tmp[7], len, minID, flag, *sort;
 	for (unsigned int i = 0; i < numcirl; i++) {
-		//ÓÃ¸ü¼Ó¼ò¶ÌµÄ±äÁ¿´úÌæ£¬´úÂë¸ü¼Ó¼ò½à
+		//ç”¨æ›´åŠ ç®€çŸ­çš„å˜é‡ä»£æ›¿ï¼Œä»£ç æ›´åŠ ç®€æ´
 		sort = &circle[i].data[0];
 		len = circle[i].length;
 		minID = *sort;
 		flag = 0;
-		for (unsigned int j = 1; j < len; j++)//ÕÒ×îĞ¡
+		for (unsigned int j = 1; j < len; j++)//æ‰¾æœ€å°
 			if (*(sort+j) < minID) {
 				minID = *(sort+j);
-				flag = j;//flagÊÇ×îĞ¡IDÔÚ»·ÄÚµÄÎ»ÖÃ
+				flag = j;//flagæ˜¯æœ€å°IDåœ¨ç¯å†…çš„ä½ç½®
 			} 
-		if (flag == 0)continue;//ÈôË³ĞòÕıÈ·Ôò²»ÓÃµ÷Õû
-		//ÈôË³Ğò²»ÕıÈ·£¬ÕûÌåÎ»ÒÆ£¨flag+j£©¸öµ¥Î»
+		if (flag == 0)continue;//è‹¥é¡ºåºæ­£ç¡®åˆ™ä¸ç”¨è°ƒæ•´
+		//è‹¥é¡ºåºä¸æ­£ç¡®ï¼Œæ•´ä½“ä½ç§»ï¼ˆflag+jï¼‰ä¸ªå•ä½
 		for (unsigned int j = 0; j < len; j++)
 			tmp[j] = *(sort + j);
 		for (unsigned int j = 0; j < len; j++)
 			*(sort + j) = tmp[(flag + j) % len];
 	}
 
-	//½«»·µÄĞòºÅ°´»·µÄ³¤¶ÈÊÕ¼¯ÖÁsortidx£¬ºÃ´¦ÊÇ£¬²»ÓÃ¶Ô»·ÕûÌåÒÆ¶¯£¬Ö»ĞèÒª½«»·¶ÔÓ¦µÄĞòºÅ(idx)ÅÅºÃĞò¼´¿É;
+	//å°†ç¯çš„åºå·æŒ‰ç¯çš„é•¿åº¦æ”¶é›†è‡³sortidxï¼Œå¥½å¤„æ˜¯ï¼Œä¸ç”¨å¯¹ç¯æ•´ä½“ç§»åŠ¨ï¼Œåªéœ€è¦å°†ç¯å¯¹åº”çš„åºå·(idx)æ’å¥½åºå³å¯;
 	unsigned int* sortidx, head = 0, rear = numcirl - 1;
-	unsigned int num_3, num_4, num_5, num_6, num_7;//³¤¶ÈÎªn(3,4...7)µÄ»·µÄ¸öÊı
+	unsigned int num_3, num_4, num_5, num_6, num_7;//é•¿åº¦ä¸ºn(3,4...7)çš„ç¯çš„ä¸ªæ•°
 	sortidx = (unsigned int*)malloc(sizeof(unsigned int) * numcirl);
-	for (unsigned int j= 0; j < numcirl; j++) {//»·¼äÅÅĞò£¬³¤¶ÈÎª3ºÍ7
+	for (unsigned int j= 0; j < numcirl; j++) {//ç¯é—´æ’åºï¼Œé•¿åº¦ä¸º3å’Œ7
 		if (circle[j].length == 3) sortidx[head++] = j;
 		if (circle[j].length == 7) sortidx[rear--] = j;
 	}
 	num_3 = head;
 	num_7 = numcirl - 1 - rear;
-	for (unsigned int j = 0; j < numcirl; j++) {//»·¼äÅÅĞò£¬³¤¶ÈÎª4ºÍ5
+	for (unsigned int j = 0; j < numcirl; j++) {//ç¯é—´æ’åºï¼Œé•¿åº¦ä¸º4å’Œ5
 		if (circle[j].length == 4) sortidx[head++] = j;
 		if (circle[j].length == 6) sortidx[rear--] = j;
 	}
 	num_4 = head - num_3;
 	num_6 = numcirl - 1 - rear - num_7;
-	for (unsigned int j = 0; j < numcirl; j++)  //»·¼äÅÅĞò£¬³¤¶ÈÎª6
+	for (unsigned int j = 0; j < numcirl; j++)  //ç¯é—´æ’åºï¼Œé•¿åº¦ä¸º6
 		if (circle[j].length == 5) sortidx[head++] = j;
 	num_5 = head - num_3 - num_4;
 	//for (unsigned int j = 0; j < numcirl; j++) cout << sortidx[j] << endl;
 	//cout << num_3 << endl << num_4 << endl << num_5 << endl << num_6 << endl << num_7 << endl;
 
-	//°´sortidxÖĞµÄĞòºÅÒÀ´Î½«»·Êä³öµ½ÎÄ¼ş
+	//æŒ‰sortidxä¸­çš„åºå·ä¾æ¬¡å°†ç¯è¾“å‡ºåˆ°æ–‡ä»¶
 	FILE* fout = NULL;
 	if (fopen_s(&fout, "myresult.txt", "wb") != 0) {
 		printf("error open result.txt\n");
@@ -162,11 +163,11 @@ int main()
 		for (j = 0; j < circle[idx].length - 1; j++) {
 			fprintf(fout, "%u,", circle[idx].data[j]);
 		}
-		fprintf(fout, "%u\n", circle[idx].data[j]);//Ã¿ĞĞ×îºó²»Êä³ö¶ººÅ
+		fprintf(fout, "%u\n", circle[idx].data[j]);//æ¯è¡Œæœ€åä¸è¾“å‡ºé€—å·
 	}
 	                     
-	//¼ÆËãÔËĞĞÊ±¼ä
+	//è®¡ç®—è¿è¡Œæ—¶é—´
 	finish = clock();
-	cout << "Ê±¼ä: " << finish - start << "ms\n"; 
+	cout << "æ—¶é—´: " << finish - start << "ms\n"; 
 }
 
