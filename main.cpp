@@ -3,9 +3,9 @@
 #include <fstream> 
 #include <stdlib.h>
 #include <time.h>
-constexpr auto NUM_ID = 7000;//NUM_ID应该大于最大的ID数max
-constexpr auto NUM_CIR = 230;//环的最大数目（考虑大量重复的环）
-constexpr auto LEN = 5100;//LEN应该大于用户的总数
+const int NUM_ID = 7000;//NUM_ID应该大于最大的ID数max
+const int NUM_CIR = 230;//环的最大数目（考虑大量重复的环）
+const int LEN = 5100;//LEN应该大于用户的总数
 using namespace std;
 
 //定义结构体，全局变量
@@ -41,6 +41,60 @@ bool DFS(unsigned int G[][9], unsigned int ID, int numcirl) {
 	circle[numcirl].length = 0;//退出递归时，
 	return 0;
 }
+ // 返回1表示a代表的环字典序大于b 返回2表示小于 返回0表示等于
+unsigned int compare(unsigned int a, unsigned int b){
+	unsigned int length_a = circle[a].length;
+	unsigned int length_b = circle[b].length;
+	if(length_a > length_b)
+		return 1;
+	else if(length_a < length_b)
+		return 2;
+
+	for(unsigned int i = 0; i < length_a; i++){
+		if(circle[a].data[i] > circle[b].data[i])
+			return 1;
+		if(circle[a].data[i] < circle[b].data[i])
+			return 2;
+	}
+	return 0;
+}
+
+void merge(unsigned int* A, unsigned int L1, unsigned int R1, unsigned int L2, unsigned int R2){
+	unsigned int i = L1, j = L2;
+	unsigned int temp[10000], index = 0;
+	while(i <= R1 && j <= R2){
+		if(compare(A[i], A[j]) != 1){   
+			temp[index++] = A[i++];
+		}else{
+			temp[index++] = A[j++];
+		}
+	}
+	while(i <= R1) temp[index++] = A[i++];
+	while(j <= R2) temp[index++] = A[j++];
+	for(i = 0; i < index; i++){
+		A[L1+i] = temp[i];
+	}
+}
+unsigned int min(unsigned int i, unsigned int j){
+	if(i<j)
+		return i;
+	else
+	{
+		return j;
+	}
+	
+}
+
+void mergesort(unsigned int* A, unsigned int n){
+	for(unsigned int step = 2; step / 2 <= n; step*=2){
+		for(unsigned int i = 1; i <= n; i += step){
+			unsigned int mid = i + step / 2 - 1;
+			if(mid + 1 <= n){
+				merge(A, i, mid, mid+1, min(i + step -1, n));
+			}
+		}
+	}
+}
 
 int main()
 {
@@ -54,15 +108,15 @@ int main()
 	unsigned int* df2 = (unsigned int*)malloc(sizeof(unsigned int) * NUM_ID);
 	unsigned int n = 0;
 	unsigned int max = 0;//整张图里最大的ID
-	if (fopen_s(&fin, "test_data.txt", "rb") != 0) {
+	if ((fin = fopen("test_data.txt", "rb")) == NULL) {
 		printf("error open test_data.txt\n");
 		return 0;
 	}
 	if (fin == 0) return 0;
 
-	while (fscanf_s(fin, "%u", df1 + n) != EOF) {
+	while (fscanf(fin, "%u", df1 + n) != EOF) {
 		fseek(fin, 1, 1);
-		fscanf_s(fin, "%u", df2 + n);
+		fscanf(fin, "%u", df2 + n);
 		if (df1[n] > max) max = df1[n];
 		if (df2[n] > max) max = df2[n];
 		fseek(fin, 2, 1);
@@ -128,30 +182,56 @@ int main()
 	}
 
 	//将环的序号按环的长度收集至sortidx，好处是，不用对环整体移动，只需要将环对应的序号(idx)排好序即可;
-	unsigned int* sortidx, head = 0, rear = numcirl - 1;
-	unsigned int num_3, num_4, num_5, num_6, num_7;//长度为n(3,4...7)的环的个数
+	unsigned int* sortidx;
+	// , head = 0, rear = numcirl - 1;
+	// unsigned int num_3, num_4, num_5, num_6, num_7;//长度为n(3,4...7)的环的个数
 	sortidx = (unsigned int*)malloc(sizeof(unsigned int) * numcirl);
-	for (unsigned int j= 0; j < numcirl; j++) {//环间排序，长度为3和7
-		if (circle[j].length == 3) sortidx[head++] = j;
-		if (circle[j].length == 7) sortidx[rear--] = j;
+	for(unsigned int i = 0; i < numcirl; i++){
+		sortidx[i] = i;
 	}
-	num_3 = head;
-	num_7 = numcirl - 1 - rear;
-	for (unsigned int j = 0; j < numcirl; j++) {//环间排序，长度为4和5
-		if (circle[j].length == 4) sortidx[head++] = j;
-		if (circle[j].length == 6) sortidx[rear--] = j;
-	}
-	num_4 = head - num_3;
-	num_6 = numcirl - 1 - rear - num_7;
-	for (unsigned int j = 0; j < numcirl; j++)  //环间排序，长度为6
-		if (circle[j].length == 5) sortidx[head++] = j;
-	num_5 = head - num_3 - num_4;
+	// for (unsigned int j= 0; j < numcirl; j++) {//环间排序，长度为3和7
+	// 	if (circle[j].length == 3) sortidx[head++] = j;
+	// 	if (circle[j].length == 7) sortidx[rear--] = j;
+	// }
+	// num_3 = head;
+	// num_7 = numcirl - 1 - rear;
+	// for (unsigned int j = 0; j < numcirl; j++) {//环间排序，长度为4和5
+	// 	if (circle[j].length == 4) sortidx[head++] = j;
+	// 	if (circle[j].length == 6) sortidx[rear--] = j;
+	// }
+	// num_4 = head - num_3;
+	// num_6 = numcirl - 1 - rear - num_7;
+	// for (unsigned int j = 0; j < numcirl; j++)  //环间排序，长度为6
+	// 	if (circle[j].length == 5) sortidx[head++] = j;
+	// num_5 = head - num_3 - num_4;
+
 	//for (unsigned int j = 0; j < numcirl; j++) cout << sortidx[j] << endl;
 	//cout << num_3 << endl << num_4 << endl << num_5 << endl << num_6 << endl << num_7 << endl;
 
+	// 字典序排序 采用归并排序 时间复杂度O(nlogn)
+	// unsigned int* idxtemp = sortidx;
+	// mergesort(idxtemp, num_3-1);
+	// idxtemp = idxtemp + num_3;
+
+	// mergesort(idxtemp, num_4-1);
+	// idxtemp = idxtemp + num_4;
+
+	// mergesort(idxtemp, num_5-1);
+	// idxtemp = idxtemp + num_5;
+
+	// mergesort(idxtemp, num_6-1);
+	// idxtemp = idxtemp + num_6;
+
+	// mergesort(idxtemp, num_7-1);
+
+	// new_version
+	mergesort(sortidx, numcirl-1);
+
+
+
 	//按sortidx中的序号依次将环输出到文件
 	FILE* fout = NULL;
-	if (fopen_s(&fout, "myresult.txt", "wb") != 0) {
+	if ((fout = fopen("myresult.txt", "wb"))==NULL) {
 		printf("error open result.txt\n");
 		return 0;
 	}
