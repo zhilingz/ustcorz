@@ -2,252 +2,232 @@
 #include <fstream> 
 #include <stdlib.h>
 #include <time.h>
-const int NUM_ID = 30000;//NUM_IDåº”è¯¥å¤§äºæœ€å¤§çš„IDæ•°max
-const int NUM_CIR = 10000;//ç¯çš„æœ€å¤§æ•°ç›®ï¼ˆè€ƒè™‘å¤§é‡é‡å¤çš„ç¯ï¼‰
-const int LEN = 280000;//LENåº”è¯¥å¤§äºç”¨æˆ·çš„æ€»æ•°
-const int DEGREE = 10;//åº”è¯¥å¤§äºæœ€å¤§çš„å‡ºåº¦
+const int NUM_ID = 30000;//NUM_IDÓ¦¸Ã´óÓÚ×î´óµÄIDÊımax
+const int NUM_CIR = 3000000;//»·µÄ×î´óÊıÄ¿£¨¿¼ÂÇ´óÁ¿ÖØ¸´µÄ»·£©
+const int EDGE = 280000;//EDGEÓ¦¸Ã´óÓÚ±ßµÄ×ÜÊı
+const int DEGREE = 30;//Ó¦¸Ã´óÓÚ×î´óµÄ³ö¶È
 using namespace std;
 
-//è®¿é—®æ ‡è®°æ•°ç»„ï¼Œ-1è¡¨ç¤ºä¸åœ¨å·²æ‰¾å‡ºçš„æ‰€æœ‰ç¯ä¸­ï¼Œ-2è¡¨ç¤ºåœ¨å·²æ‰¾å‡ºçš„æ‰€æœ‰ç¯ä¸­
-int visited[NUM_ID];
+/*
+ÓÅ»¯£º
+1.ÕÒ»·µÄÊ±ºòÖ»ÄÜÈÃ×îĞ¡µÄ³öÏÖÔÚ»·Í·£¬ÈôÊÇ»·ÖĞ³öÏÖÁË×îĞ¡£¬ÔòÖ±½ÓÉáÆú
+£¨ºÃ´¦£º±ÜÃâÖØ¸´£¬»·ÄÚÓĞĞò£¬Ê×ÔªËØÓĞĞò£©
+2.ÕÒ»·Ç°¼ôÖ¦£¨ÍØÆËÅÅĞò³ıÈ¥²»¿ÉÄÜ³É»·µÄµã£©
+3.¾¡Á¿Ê¹ÓÃÈ«¾Ö±äÁ¿£¬¼õÉÙ¶¯Ì¬·ÖÅäµÄÊ±¼ä
+*/
 
-//å®šä¹‰ç»“æ„ä½“ï¼Œå…¨å±€å˜é‡
-typedef struct{
-	unsigned int data[7];//å­˜ä¸€ä¸ªç¯
-	unsigned int length;//ç¯çš„é•¿åº¦
-}CIR;//ä¸€ä¸ªç¯çš„ä¿¡æ¯
-CIR* circle;//å…ƒç´ ä¸ºç¯ç»“æ„ä½“çš„æ•°ç»„
+/*È«¾Ö±äÁ¿*/
+//0±íÊ¾Î´ÔÚ·ÃÎÊ£¬1±íÊ¾ÕıÔÚ·ÃÎÊ
+bool visited[NUM_ID];
+typedef unsigned int ui;
+ui queueID[NUM_ID];//queueIDÊÇ´æ´¢Èë¶ÈÎª0µÄ¶ÓÁĞ£¬0ºÅÔªËØÎª×ÜÊı
+char tem_degree[NUM_ID];//¸´ÖÆÒ»·İÈë¶ÈÊı×é£¬±ÜÃâ¸Ä±äG
+ui p, q;//ÓÃÓÚÍØÆËÅÅĞò£¬¸¨Öú±äÁ¿
+ui numcirl = 0;//»·µÄ×ÜÊıÁ¿
+ui df[2 * EDGE];//Êı¾İµÄÎÄ¼ş£¬´æ·ÅÔÚdf£¨data of file£©Êı×éÖĞ£¬×ªÕË ÊÕ×ª ×ªÕË...
+ui i, j, k, i_circle;//×¨ÃÅÓÃÔÚÑ­»·ÖĞ
+ui ID1, ID2;//´´½¨Í¼Ê±µÄ¸¨Öú±äÁ¿
+ui edge_DFS;//DFSÖĞµÄ¸¨Öú±äÁ¿
+//½«»·µÄĞòºÅ°´»·µÄ³¤¶ÈÊÕ¼¯ÖÁsortidx
+//ºÃ´¦ÊÇ£¬²»ÓÃ¶Ô»·ÕûÌåÒÆ¶¯£¬Ö»ĞèÒª½«»·¶ÔÓ¦µÄĞòºÅ(idx)ÅÅºÃĞò¼´¿É;
+ui sortidx[NUM_CIR];
 
-// è¿”å›1è¡¨ç¤ºaä»£è¡¨çš„ç¯å­—å…¸åºå¤§äºb è¿”å›2è¡¨ç¤ºå°äº è¿”å›0è¡¨ç¤ºç­‰äº
-unsigned int compare(unsigned int a, unsigned int b) {
-	unsigned int length_a = circle[a].length;
-	unsigned int length_b = circle[b].length;
-	if (length_a > length_b)
-		return 1;
-	else if (length_a < length_b)
-		return 2;
+//¶¨Òå½á¹¹Ìå£¬È«¾Ö±äÁ¿
+typedef struct {
+	ui data[7];//´æÒ»¸ö»·
+	ui length;//»·µÄ³¤¶È
+}CIR;//Ò»¸ö»·µÄĞÅÏ¢
+CIR circle[NUM_CIR];//ÔªËØÎª»·½á¹¹ÌåµÄÊı×é
 
-	for (unsigned int i = 0; i < length_a; i++) {
-		if (circle[a].data[i] > circle[b].data[i])
-			return 1;
-		if (circle[a].data[i] < circle[b].data[i])
-			return 2;
-	}
-	return 0;
-}
+//¶¨ÒåÍ¼µÄ½áµãµÄ½á¹¹Ìå£¬ÁÚ½Ó¾ØÕó
+typedef struct {
+	char abandon;//Èç¹ûÕâ¸ö¶¥µãÃ»¶ªÆú£¨ÍØÆËÅÅĞòÖĞ£¬Èë/³ö¶ÈÎª0£©£¬Õâ¸öÖµÎª1
+	char degree[2];//0³ö¶È£¬1Èë¶È
+	ui edge[DEGREE];//³ö±ß
+}Graph;
+/*ÁÚ½Ó¾ØÕó£º
+ĞòºÅ£º¼´ÓÃ»§ID£¬Ëæ»ú·ÃÎÊ¼õÉÙÊ±¼ä¿ªÏú
+µÚ0ÁĞ£º¸Ã¶¥µãµÄ³ö¶È£¨Õâ¸öIDÕËºÅ¸ø¶àÉÙ¸öÈË×ªÕË£©
+µÚ1ÁĞ£ºÈë¶È£¨Õâ¸öIDÕËºÅÊÕÁË¶àÉÙÈËµÄ×ªÕË£©
+µÚnÁĞ£¨n>=2£©£º¸Ã¶¥µãµÄ³ö±ßÁÚ½Ó½áµã
+*/
+Graph G[NUM_ID];
 
-void merge(unsigned int* A, unsigned int L1, unsigned int R1, unsigned int L2, unsigned int R2) {
-	unsigned int i = L1, j = L2;
-	unsigned int temp[10000], index = 0;
-	while (i <= R1 && j <= R2) {
-		if (compare(A[i], A[j]) != 1) {
-			temp[index++] = A[i++];
-		}
-		else {
-			temp[index++] = A[j++];
-		}
-	}
-	while (i <= R1) temp[index++] = A[i++];
-	while (j <= R2) temp[index++] = A[j++];
-	for (i = 0; i < index; i++) {
-		A[L1 + i] = temp[i];
-	}
-}
-unsigned int min(unsigned int i, unsigned int j) {
-	if (i < j)
-		return i;
-	else
-	{
-		return j;
-	}
-
-}
-
-void mergesort(unsigned int* A, unsigned int n) {
-	for (unsigned int step = 2; step / 2 <= n; step *= 2) {
-		for (unsigned int i = 1; i <= n; i += step) {
-			unsigned int mid = i + step / 2 - 1;
-			if (mid + 1 <= n) {
-				merge(A, i, mid, mid + 1, min(i + step - 1, n));
-			}
-		}
-	}
-}
-
-
-//ç±»DFSç®—æ³•ï¼Œæ‰¾å‡ºæ‰€æœ‰ç¯ï¼ˆreturnä¹‹å‰éƒ½è¦åˆ é™¤è®¿é—®æ ‡è®°ï¼‰
-bool DFS(unsigned int G[][DEGREE], unsigned int ID, unsigned int* p_numcirl) {
-	CIR* p_circle = circle+*p_numcirl;
-	visited[ID] = *p_numcirl;
-	p_circle->data[p_circle->length++] = ID;
-	if (p_circle->length == 7) {//ç¯çš„é•¿åº¦è¦å°äºç­‰äº7
-		for (unsigned int k = 1; k <= G[ID][0]; k++) //IDæœ‰æ²¡æœ‰å‡ºåº¦æ˜¯ç¯å¤´
-			if (G[ID][k] == p_circle->data[0]) {
-				visited[ID] = -2;
-				return 1;//æ‰¾åˆ°ç¯
-			}
-		//p_circle->length = 0;
-		visited[ID] = -1;
-		p_circle->length--;
-		return 0;//ä¸æ˜¯ç¯
-	}
-	for (unsigned int i = 1; i <= G[ID][0]; i++) {
-		if (p_circle->length > 2)//ç¯çš„é•¿åº¦è¦å¤§äºç­‰äº3
-			for (unsigned int j = 1; j <= G[ID][0]; j++)//IDæœ‰æ²¡æœ‰å‡ºåº¦æ˜¯ç¯å¤´
-				if (G[ID][j] == p_circle->data[0]) {
-					visited[ID] = -2;
-					return 1;//æ‰¾åˆ°ç¯
-				}
-		if (visited[G[ID][i]] == *p_numcirl) continue;
-		if (DFS(G, G[ID][i], p_numcirl)) {//æ‰¾åˆ°ç¯
-			if (i == G[ID][0]) {//è‹¥æ— å…¶å®ƒçš„å‡ºåº¦åˆ™è¿”å›1
-				visited[ID] = -2;
-				return 1;
-			}
-			else {//è‹¥è¿˜æœ‰å…¶ä»–å‡ºåº¦ï¼Œåˆ™ç»§ç»­æ‰¾ç¯
-				(*p_numcirl)++;
-				p_circle = circle + *p_numcirl;
-				p_circle->length = 0;
-				for (unsigned int j = 0; ; j++) {//å°†ä¸Šä¸€ä¸ªç¯çš„å‰éƒ¨åˆ†å¤åˆ¶åˆ°ä¸‹ä¸€ä¸ªç¯
-					p_circle->data[j] = (p_circle-1)->data[j];
-					p_circle->length++;
-					visited[p_circle->data[j]] = *p_numcirl;
-					if (p_circle->data[j] == ID) break;
+//numcirl++£¬ĞÂ»·±ØĞëÒª¸´ÖÆÉÏÒ»¸ö»·µÄÄÚÈİ
+void DFS(ui ID) {
+	
+	visited[ID] = 1;
+	circle[numcirl].data[circle[numcirl].length] = ID;
+	circle[numcirl].length++;
+	
+	for (ui i_DFS = 0; i_DFS < G[ID].degree[0]; i_DFS++) {
+		edge_DFS = G[ID].edge[i_DFS];
+		if (G[edge_DFS].abandon == 1) continue;//Ìø¹ı¶ªÆúµÄµã
+		if (edge_DFS < circle[numcirl].data[0]) continue;//±ØĞë±£Ö¤»·Í·×îĞ¡
+		if (circle[numcirl].length >= 3 && circle[numcirl].length <= 6) {
+			//Èôedge_DFSÎª»·Í·
+			if (edge_DFS == circle[numcirl].data[0]) {
+				numcirl++;
+				circle[numcirl].length = 0;
+				//½«ÉÏÒ»¸ö»·µÄÇ°²¿·Ö¸´ÖÆµ½ÏÂÒ»¸ö»·,visited²»Òª¶¯
+				for (j = 0;; j++) {
+					circle[numcirl].data[j] = circle[numcirl - 1].data[j];
+					circle[numcirl].length++;
+					if (circle[numcirl].data[j] == ID) break;
 				}
 				continue;
 			}
 		}
+
+		//1.Èôlength==1£¬´Ë¾äÎŞĞ§
+		//2.Èôlength==2£¬Ôò¾ÍËã³É»·Ò²²»Âú×ãÌâÄ¿ÒªÇó
+		//3.Èôlength>=3£¬Ôò²»ÔÚ»·Í·£¬ÇÒÒÑ¾­·ÃÎÊ¹ıÁË
+		if (visited[edge_DFS] != 0) continue;
+
+		if (circle[numcirl].length == 6) {
+			//IDµÄ³ö¶È(edge_DFS)µÄ³ö¶ÈÖĞÓĞÃ»ÓĞ»·Í·
+			for (k = 0; k < G[edge_DFS].degree[0]; k++) {
+				//Èôedge_DFSµÄ³ö¶ÈÖĞÓĞ»·Í·
+				if (G[edge_DFS].edge[k] == circle[numcirl].data[0]) {
+					circle[numcirl].data[circle[numcirl].length] = edge_DFS;
+					circle[numcirl].length++;
+					numcirl++;
+					circle[numcirl].length = 0;
+					//½«ÉÏÒ»¸ö»·µÄÇ°²¿·Ö¸´ÖÆµ½ÏÂÒ»¸ö»·,visited²»Òª¶¯
+					for (j = 0; j < 6; j++) {
+						circle[numcirl].data[j] = circle[numcirl - 1].data[j];
+						circle[numcirl].length++;
+					}
+					break;//¶ÔÓÚÕâ¸öedge_DFS²»¿ÉÄÜÔÙÓĞ³ö¶ÈÎª»·Í·ÁË
+				}
+			}
+			continue;//¿´¿´IDµÄÏÂÒ»¸ö³ö¶ÈÖĞÊÇ·ñÓĞ»·Í·
+		}
+
+		//´Ë¾äÏÂÃæµÄ´úÂë²»ÒªÊ¹ÓÃedge_DFS£¨È«¾Ö±äÁ¿£©
+		//ÒòÎªDFSÖĞÒÑ¾­¶Ôedge_DFSÖØĞÂ¸³Öµ
+		DFS(edge_DFS);
 	}
-	circle[*p_numcirl].length--;//é€€å‡ºé€’å½’ï¼Œä¸”ä¸æˆç¯
-	visited[ID] = -1;
-	return 0;
- }
+	visited[ID] = 0;
+	circle[numcirl].length--;
+}
+
 
 int main()
 {
-	long start = clock();  //å¼€å§‹æ—¶é—´
-	long finish;//ç»“æŸæ—¶é—´ï¼Œç”¨äºæµ‹è¯•ä»£ç è¿è¡Œæ—¶é—´
-   
-	//æ‰“å¼€è¯»å–æ•°æ®çš„æ–‡ä»¶ï¼Œå­˜æ”¾åœ¨dfï¼ˆdata of fileï¼‰æ•°ç»„ä¸­
-	FILE* fin = NULL;
-	unsigned int* df1 = (unsigned int*)malloc(sizeof(unsigned int) * LEN);
-	unsigned int* df2 = (unsigned int*)malloc(sizeof(unsigned int) * LEN);
-	unsigned int n = 0;
-	unsigned int max = 0;//æ•´å¼ å›¾é‡Œæœ€å¤§çš„ID
+	long start = clock();  //¿ªÊ¼Ê±¼ä
+	long finish;//½áÊøÊ±¼ä£¬ÓÃÓÚ²âÊÔ´úÂëÔËĞĞÊ±¼ä
 
-	//fopenæ‰“å¼€æ–‡ä»¶
+	//´ò¿ª¶ÁÈ¡Êı¾İµÄÎÄ¼ş£¬´æ·ÅÔÚdf£¨data of file£©Êı×éÖĞ£¬×ªÕË ÊÕ×ª ×ªÕË...
+	FILE* fin = NULL;
+	ui n = 0;
+	ui max = 0;//ÕûÕÅÍ¼Àï×î´óµÄID
 	if ((fin = fopen("test_data.txt", "rb")) == NULL) {
 		printf("error open test_data.txt\n");
 		return 0;
 	}
 	if (fin == 0) return 0;
 
-	while (fscanf(fin, "%u", df1 + n) != EOF) {
+	while (fscanf(fin, "%u", df + n) != EOF) {
+		if (df[n] > max) max = df[n];
+		n++;
 		fseek(fin, 1, 1);
-		fscanf(fin, "%u", df2 + n);
-		if (df1[n] > max) max = df1[n];
-		if (df2[n] > max) max = df2[n];
+		fscanf(fin, "%u", df + n);
+		if (df[n] > max) max = df[n];
 		fseek(fin, 2, 1);
 		while (fgetc(fin) != '\n');
 		n++;
 	}
 	fclose(fin);
 
-	//åˆ›å»ºæœ‰å‘å›¾(é‚»æ¥çŸ©é˜µ)
-	/*é‚»æ¥çŸ©é˜µï¼š
-	åºå·ï¼šå³ç”¨æˆ·IDï¼Œéšæœºè®¿é—®å‡å°‘æ—¶é—´å¼€é”€
-	ç¬¬0åˆ—ï¼šè¯¥é¡¶ç‚¹çš„å‡ºåº¦ï¼ˆè¿™ä¸ªIDè´¦å·ç»™å¤šå°‘ä¸ªäººè½¬è´¦ï¼‰
-	ç¬¬nåˆ—ï¼ˆn>=1ï¼‰ï¼šè¯¥é¡¶ç‚¹çš„å‡ºè¾¹é‚»æ¥ç»“ç‚¹
-	*/
-	unsigned int G[NUM_ID][DEGREE];
-	unsigned int ID;
-	for (unsigned int i = 0; i <= max; i++) {
-		G[i][0] = 0;//æ‰€æœ‰å‡ºåº¦åˆå§‹åŒ–ä¸º0
-		visited[i] = -1;//éšä¾¿ä¹Ÿåˆå§‹åŒ–è®¿é—®è®°å½•æ•°ç»„
+	//¼ÆËãÔËĞĞÊ±¼ä
+	finish = clock();
+	cout << "¶ÁÎÄ¼şÊ±¼ä: " << finish - start << "ms\n";
+
+	//´´½¨ÓĞÏòÍ¼(ÁÚ½Ó¾ØÕó)
+	for (i = 0; i <= max; i++) {
+		G[i].degree[0] = 0;//ËùÓĞ³ö¶È³õÊ¼»¯Îª0
+		G[i].degree[1] = 0;//ËùÓĞÈë¶È³õÊ¼»¯Îª0
+		G[i].abandon = 1;
+		visited[i] = 0;//Ëæ±ãÒ²³õÊ¼»¯·ÃÎÊ¼ÇÂ¼Êı×é
 	}
-	for (unsigned int i = 0; i < n; i++) {
-		ID = df1[i];
-		G[ID][G[ID][0]+1] = df2[i];
-		G[ID][0]++;//å‡ºåº¦åŠ ä¸€
-		if (G[ID][0] > DEGREE) {
-			printf("å‡ºåº¦å¤§äºDEGREEï¼Œåº”è¯¥è®¾å¤§ä¸€äº›");
+	for (i = 0; i < n; i = i + 2) {
+		ID1 = df[i];
+		ID2 = df[i + 1];
+		G[ID1].edge[G[ID1].degree[0]] = ID2;
+		G[ID1].degree[0]++;//³ö¶È¼ÓÒ»
+		G[ID2].degree[1]++;//Èë¶È¼ÓÒ»
+		if (G[ID1].degree[0] >= DEGREE) {
+			printf("DEGREE too small");
 			return 0;
 		}
 	}
-	free(df1);
-	free(df2);
 
-	//DFSæ‰¾å‡ºæ‰€æœ‰ç¯
-	circle = (CIR*)malloc(sizeof(CIR) * NUM_ID);
-	unsigned int numcirl=0;//ç¯çš„æ€»æ•°é‡
-	for (unsigned int i = 0; i <= max; i++) {
-		circle[numcirl].length = 0;//åˆå§‹åŒ–ç¯çš„é•¿åº¦
-		if (G[i][0] == 0) continue;//æ²¡æœ‰å‡ºåº¦
-		if (DFS(G, i, &numcirl)) 
-			numcirl++;//è‹¥æˆç¯ï¼Œåˆ™ç¯æ•°åŠ ä¸€
-	}
+	//¼ÆËãÔËĞĞÊ±¼ä
+	finish = clock();
+	cout << "½¨Á¢ÓĞÏòÍ¼Ê±¼ä: " << finish - start << "ms\n";
 
-	//ç¯å†…æ’åº
-	unsigned int tmp[7], len, minID, flag, *sort;
-	for (unsigned int i = 0; i < numcirl; i++) {
-		//ç”¨æ›´åŠ ç®€çŸ­çš„å˜é‡ä»£æ›¿ï¼Œä»£ç æ›´åŠ ç®€æ´
-		if (circle[i].data[0] == 6001)
-			printf("\n");
-		sort = &circle[i].data[0];
-		len = circle[i].length;
-		minID = *sort;
-		flag = 0;
-		for (unsigned int j = 1; j < len; j++)//æ‰¾æœ€å°
-			if (*(sort+j) < minID) {
-				minID = *(sort+j);
-				flag = j;//flagæ˜¯æœ€å°IDåœ¨ç¯å†…çš„ä½ç½®
-			} 
-		if (flag == 0)continue;//è‹¥é¡ºåºæ­£ç¡®åˆ™ä¸ç”¨è°ƒæ•´
-		//è‹¥é¡ºåºä¸æ­£ç¡®ï¼Œæ•´ä½“ä½ç§»ï¼ˆflag+jï¼‰ä¸ªå•ä½
-		for (unsigned int j = 0; j < len; j++)
-			tmp[j] = *(sort + j);
-		for (unsigned int j = 0; j < len; j++)
-			*(sort + j) = tmp[(flag + j) % len];
-	}
-	
-	//å°†ç¯çš„åºå·æŒ‰ç¯çš„é•¿åº¦æ”¶é›†è‡³sortidxï¼Œå¥½å¤„æ˜¯ï¼Œä¸ç”¨å¯¹ç¯æ•´ä½“ç§»åŠ¨ï¼Œåªéœ€è¦å°†ç¯å¯¹åº”çš„åºå·(idx)æ’å¥½åºå³å¯;
-	unsigned int* sortidx;
-	sortidx = (unsigned int*)malloc(sizeof(unsigned int) * numcirl);
-	for (unsigned int i = 0; i < numcirl; i++) {
-		sortidx[i] = i;
-	}
-	mergesort(sortidx, numcirl - 1);
-
-	//å·²ç»æ’åºå¥½ï¼Œåˆ å»é‡å¤
-	unsigned int fcount=0;//fcount(final count circle)ä¸ºæœ€ç»ˆçš„ä¸é‡å¤çš„ä¸ªæ•°-1
-	for (unsigned int i = 1,j; i < numcirl;i++) {
-		for (j = 0; j < circle[sortidx[fcount]].length; j++) {
-			if (circle[sortidx[fcount]].data[j] != circle[sortidx[i]].data[j]) break;
+	//ÍØÆËÅÅĞò¼ôÖ¦£¬abandonÖÃ1
+	queueID[0] = 0;
+	for (i = 0; i <= max; i++) {
+		tem_degree[i] = G[i].degree[1];
+		if (tem_degree[i] == 0 && G[i].degree[0] != 0) {
+			queueID[queueID[0] + 1] = i;
+			queueID[0]++;
 		}
-		if (j == circle[sortidx[fcount]].length)
-			if (circle[sortidx[i]].length == circle[sortidx[fcount]].length) continue;
-		fcount++;
-		sortidx[fcount] = sortidx[i];
+		if (tem_degree[i] != 0 || G[i].degree[0] != 0) {
+			G[i].abandon = 0;
+		}
+	}
+	while (queueID[0] != 0) {
+		p = queueID[queueID[0]];
+		queueID[0]--;
+		G[p].abandon = 1;
+		//printf("%u ³ö¶È£º%u Èë¶Á£º%u\n", p,G[p].degree[0], G[p].degree[1]);
+		for (char d = 0; d < G[p].degree[0]; d++) {
+			q = G[p].edge[d];
+			tem_degree[q]--;
+			if (tem_degree[q] == 0) {
+				queueID[queueID[0] + 1] = q;
+				queueID[0]++;
+			}
+		}
 	}
 
-	//æŒ‰sortidxä¸­çš„åºå·ä¾æ¬¡å°†ç¯è¾“å‡ºåˆ°æ–‡ä»¶
+	//¼ÆËãÔËĞĞÊ±¼ä
+	finish = clock();
+	cout << "¼ôÖ¦Ê±¼ä: " << finish - start << "ms\n";
+
+	//ÕÒ»·£¬»·ÄÚÒÑ¾­ÓĞĞò£¬ÇÒÎŞÖØ¸´
+	circle[0].length = 0;
+	for (i_circle = 0; i_circle <= max; i_circle++) {
+		if (G[i_circle].abandon == 1) continue;
+		DFS(i_circle);
+	}
+
+	//¼ÆËãÔËĞĞÊ±¼ä
+	finish = clock();
+	cout << "ÕÒ»·Ê±¼ä: " << finish - start << "ms\n";
+
 	FILE* fout = NULL;
-	if ((fout = fopen("myresult.txt", "wb"))==NULL) {
+	if ((fout = fopen("myresult.txt", "wb")) == NULL) {
 		printf("error open result.txt\n");
 		return 0;
 	}
 	if (fout == 0) return 0;
-	unsigned int idx;
-	fprintf(fout, "%u\n", fcount + 1);
-	for (unsigned int i = 0, j; i <= fcount; i++) {
-		idx = sortidx[i];
-		for (j = 0; j < circle[idx].length - 1; j++) {
-			fprintf(fout, "%u,", circle[idx].data[j]);
+	fprintf(fout, "%u\n", numcirl);
+	//ÏÈÊä³ö³¤¶ÈÎª3µÄ»·£¬ÔÙÊä³ö³¤¶ÈÎª4µÄ»·¡£¡£¡£
+	for (k = 3; k <= 7; k++) {
+		for (i = 0, j; i < numcirl; i++) {
+			if (circle[i].length != k)continue;
+			for (j = 0; j < circle[i].length - 1; j++) {
+				fprintf(fout, "%u,", circle[i].data[j]);
+			}
+			fprintf(fout, "%u\n", circle[i].data[j]);//Ã¿ĞĞ×îºó²»Êä³ö¶ººÅ
 		}
-		fprintf(fout, "%u\n", circle[idx].data[j]);//æ¯è¡Œæœ€åä¸è¾“å‡ºé€—å·
 	}
-	free(circle);
-	//è®¡ç®—è¿è¡Œæ—¶é—´
+	
+	//¼ÆËãÔËĞĞÊ±¼ä
 	finish = clock();
-	cout << "æ—¶é—´: " << finish - start << "ms\n"; 
+	cout << "Ğ´ÈëÎÄ¼şÊ±¼ä: " << finish - start << "ms\n";
 }
